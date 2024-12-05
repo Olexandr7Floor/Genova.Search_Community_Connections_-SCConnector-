@@ -1,0 +1,13 @@
+2024-12-03 14:09:13,958 — INFO — Початок парсингу каналу: qwe (ID: 934206087094235186)
+2024-12-03 14:09:15,243 — INFO — Отримано 100 повідомлень. Загалом: 99
+2024-12-03 14:09:15,553 — INFO — Отримано 60 повідомлень. Загалом: 159
+2024-12-03 14:09:15,897 — INFO — Усі повідомлення отримано.
+2024-12-03 14:09:15,905 — INFO — Парсинг завершено. Збережено 159 повідомлень у файл 'parsed_msg_discord.json'.
+2024-12-03 16:17:18,619 — INFO — [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-12-03 16:17:18,619 — INFO — [33mPress CTRL+C to quit[0m
+2024-12-03 16:17:18,619 — INFO —  * Restarting with watchdog (windowsapi)
+2024-12-03 16:18:18,525 — INFO — [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2024-12-03 16:18:18,525 — INFO — [33mPress CTRL+C to quit[0m
+2024-12-03 16:18:18,525 — INFO —  * Restarting with watchdog (windowsapi)

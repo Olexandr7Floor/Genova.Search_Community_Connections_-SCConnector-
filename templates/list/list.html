@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analysis AI</title>
+  <link rel="stylesheet" href="/static/css/style.css?v=1">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+
+  <script src="/static/java/scriot.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+  <div class="d-flex bd-highlight content" style="margin: 5px 20px 0px 20px;">
+    <ul class="list-group list-group-horizontal" style="width: 96%; list-style-type: none;">
+        <li class="list-group-item active" data-section="search-results" style="border-radius: 10px;">Data Input</li>
+        <li class="list-group-item" data-section="entities" style="border-radius: 10px;">Entities</li>
+        <li class="list-group-item" data-section="semantic" style="border-radius: 10px;">Semantic Analysis</li>
+        <li class="list-group-item" data-section="ai-expert" style="border-radius: 10px;">AI Expert</li>
+    </ul>
+  </div>
+
+  <div id="mainContent" class="black-border-block" style="height: 80%; padding-top: 10px;">
+    <!-- Search Results -->
+    <section id="search-results" class="content-section active">
+      <div id="textDiv" style="border: 1px solid rgb(200, 200, 200); height: 595px; overflow: auto; width: auto; border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; gap: 30px; padding: 30px;">
+
+          <!-- Левый блок -->
+          <div id="leftInputBlock" style="flex: 1; display: flex; flex-direction: column; gap: 30px;">
+            <!-- Выбор метода -->
+            <div style="border: 1px dashed #ccc; border-radius: 15px; padding: 20px; background-color: #fff;">
+              <label for="dataInputMethod" style="font-size: 18px; font-weight: 600; color: #333; padding: 10px;">Select Data Entry Method</label>
+              <select id="dataInputMethod" style="width: 100%; padding: 10px; margin-top: 15px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;">
+                <option value=""> </option>
+                <option value="discord">Discord</option>
+                <option value="telegram">Telegram</option>
+              </select>
+              <button id="runParserBtn" style="margin-top: 25px; width: 100%; padding: 15px; background-color: #27a7a7; color: #fff; border-radius: 8px; font-size: 16px; border: none; cursor: pointer;">
+                RUNNING
+              </button>
+            </div>
+
+            <!-- Поля для ввода -->
+            <div style="border: 1px dashed #ccc; border-radius: 15px; padding: 20px; background-color: #fff;">
+              <fieldset id="discordFields" style="display: none;">
+                <legend style="font-size: 18px; color: #27a7a7;">Discord</legend>
+                <input id="token" type="text" placeholder="Enter your token" style="width: 95%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" />
+                <input id="channelId" type="text" placeholder="Enter the channel ID" style="width: 95%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" />
+                <input id="channelName" type="text" placeholder="Enter the channel name" style="width: 95%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" />
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                  <input id="startDate" type="date" style="width: 45%; margin-top: 10px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" />
+                  <input id="endDate" type="date" style="width: 45%; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" />
+                </div>
+              
+              </fieldset>
+
+              <fieldset id="telegramFields" style="display: none;">
+                <legend style="font-size: 18px; color: #27a7a7;">Telegram</legend>
+                <form id="fileUploadForm" enctype="multipart/form-data" style="max-width: 400px; margin: auto; padding: 20px; border: 2px dashed #27a7a7; border-radius: 12px; background-color: #f9f9f9; text-align: center;">
+                  <label for="fileInput" style="font-size: 18px; font-weight: 600; color: #333; display: block; margin-bottom: 15px;">Upload File</label>
+                  <input type="file" id="fileInput" name="fileInput" style="display: none;" />
+                  <div id="dropZone" style="padding: 20px; border: 2px dashed #ccc; border-radius: 10px; background-color: #fff; cursor: pointer;" onclick="document.getElementById('fileInput').click();">
+                    <p style="font-size: 16px; color: #666; margin: 0;">Click to add a file here</p>
+                  </div>
+                  <p id="fileName" style="margin-top: 15px; font-size: 14px; color: #666; display: none;"></p>
+                  <button type="button" id="uploadBtn" style="margin-top: 20px; width: 100%; padding: 15px; background-color: #27a7a7; color: #fff; border-radius: 8px; font-size: 16px; border: none; cursor: pointer;">Upload</button>
+                </form>
+              </fieldset>
+            </div>
+          </div>
+
+          <!-- Правый блок -->
+          <div id="rightContentBlock" style="flex: 2; border: 1px solid #ccc; border-radius: 15px; padding: 25px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); overflow: auto; height: 480px; background-color: #fff;">
+            Displaying the result in JSON format
+          </div>
+
+
+<script>
+  // Переключение между Discord и Telegram
+  document.getElementById('dataInputMethod').addEventListener('change', function () {
+    const selectedMethod = this.value;
+    const discordFields = document.getElementById('discordFields');
+    const telegramFields = document.getElementById('telegramFields');
+
+    if (selectedMethod === 'discord') {
+      discordFields.style.display = 'block';
+      telegramFields.style.display = 'none';
+    } else if (selectedMethod === 'telegram') {
+      discordFields.style.display = 'none';
+      telegramFields.style.display = 'block';
+    }
+  });
+
+  // Кнопка загрузки файла для Telegram
+  document.getElementById('uploadBtn').addEventListener('click', async function () {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files.length) {
+      alert('Please select the file first.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('fileInput', fileInput.files[0]);
+
+    try {
+      const response = await fetch('/list', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        alert('The file has been successfully uploaded!');
+        // Обновление отображения после успешной загрузки, если необходимо
+      } else {
+        alert('Failed to upload the file.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Theres been an unforeseen error.');
+    }
+  });
+
+  // Обработка изменения файла в поле выбора
+  document.getElementById('fileInput').addEventListener('change', function () {
+    const fileInput = this;
+    const fileNameDisplay = document.getElementById('fileName');
+    const dropZone = document.getElementById('dropZone');
+
+    if (fileInput.files.length > 0) {
+      const fileName = fileInput.files[0].name;
+      fileNameDisplay.textContent = `Selected file: ${fileName}`;
+      fileNameDisplay.style.display = 'block';
+      dropZone.style.borderColor = '#27a7a7';
+    } else {
+      fileNameDisplay.textContent = '';
+      fileNameDisplay.style.display = 'none';
+      dropZone.style.borderColor = '#ccc';
+    }
+  });
+
+  // Кнопка запуска парсера
+  document.getElementById('runParserBtn').addEventListener('click', async function () {
+    const dataInputMethod = document.getElementById('dataInputMethod').value;
+    const resultContainer = document.getElementById('rightContentBlock'); // Используем правильный ID
+
+    if (dataInputMethod === 'discord') {
+      // Обработка для Discord
+      const token = document.getElementById('token').value;
+      const channelId = document.getElementById('channelId').value;
+      const channelName = document.getElementById('channelName').value;
+
+      if (!token || !channelId || !channelName) {
+        alert('Please fill in all fields for Discord (Token, Channel ID, Channel Name).');
+        return;
+      }
+
+      try {
+        const response = await fetch('/list/run-discord-parser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, channel_id: channelId, channel_name: channelName })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          resultContainer.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        } else {
+          const error = await response.json();
+          resultContainer.innerHTML = `<p style="color: red;">Error: ${error.error}</p>`;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultContainer.innerHTML = '<p style="color: red;">Theres been an unforeseen error.</p>';
+      }
+    } else if (dataInputMethod === 'telegram') {
+      // Обработка для Telegram
+      try {
+        const response = await fetch('/list/run-parser', {
+          method: 'POST'
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          resultContainer.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        } else {
+          const error = await response.json();
+          resultContainer.innerHTML = `<p style="color: red;">Error: ${error.error}</p>`;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultContainer.innerHTML = '<p style="color: red;">Theres been an unforeseen error.</p>';
+      }
+    } else {
+      alert('Please select an acceptable data entry method.');
+    }
+  });
+</script>
+
+
+      </div>
+ </div> 
+      <div class="save-info-block">
+        <a class="btn btn-outline-success" href="{{ url_for('static', filename='parsed_msg.json') }}" download>Export JSON</a>
+      </div>
+    </section>
+    
+
+
+
+
+
+
+     <!-- Entities -->
+<section id="entities" class="content-section"></section>
+
+<script>
+document.querySelector('li[data-section="entities"]').addEventListener('click', async function () {
+    const entitiesSection = document.getElementById('entities');
+
+    // Прелоадер
+    entitiesSection.innerHTML = `<div style="text-align: center; padding: 50px;">
+        <p>Processing, please wait...</p>
+        <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    </div>`;
+
+    try {
+        // Запуск скриптів
+        const response = await fetch('/list/run-entities-scripts');
+        if (!response.ok) throw new Error('Failed to run scripts');
+
+        // Завантаження контенту з файлів
+        const leadersData = await fetch('/list/read-file/leaders_analysis.txt').then(res => res.json());
+        const topicsData = await fetch('/list/read-file/chat_topics_percentage.txt').then(res => res.json());
+        const userCountsData = await fetch('/list/read-file/user_message_counts.txt').then(res => res.json());
+
+        // Формування контенту
+        entitiesSection.innerHTML = `
+            <h1 style="color: #27a7a7;">Entities Analysis</h1>
+            <div id="entities-content" style="display: grid; grid-template-areas: 
+                'left-top right-top'
+                'left-middle right-middle'
+                'left-bottom right-bottom';
+                gap: 20px;">
+                <div style="grid-area: left-top; border: 1px solid #ccc; padding: 10px;">
+                    <h3>Leaders Pie Chart</h3>
+                    <img id="leadersPieChart" src="{{ url_for('static', filename='leaders_analysis_pie_chart.png') }}" alt="Leaders Pie Chart" style="max-width: 100%;" />
+                </div>
+                <div style="grid-area: right-top; border: 1px solid #ccc; padding: 10px; font-size: 22px; font-family: 'Roboto', sans-serif;">
+                    <h3>Leaders Analysis</h3>
+                    <pre id="leadersData">${leadersData.content}</pre>
+                </div>
+                <div style="grid-area: left-middle; border: 1px solid #ccc; padding: 10px;">
+                    <h3>User Activity Plot</h3>
+                    <img id="userActivityPlot" src="{{ url_for('static', filename='user_activity.png') }}" alt="User Activity Plot" style="max-width: 60%;" />
+                </div>
+                <div style="grid-area: right-middle; border: 1px solid #ccc; padding: 10px; font-size: 22px; font-family: 'Roboto', sans-serif;">
+                    <h3>Chat Topics Percentage</h3>
+                    <pre id="topicsData">${topicsData.content}</pre>
+                </div>
+                <div style="grid-area: left-bottom; border: 1px solid #ccc; padding: 10px;">
+                    <h3>Community Activity Plot</h3>
+                    <img id="communityActivityPlot" src="{{ url_for('static', filename='community_activity.png') }}" alt="Community Activity Plot" style="max-width: 60%;" />
+                </div>
+                <div style="grid-area: right-bottom; border: 1px solid #ccc; padding: 10px; font-size: 22px; font-family: 'Roboto', sans-serif;">
+                    <h3>User Message Counts</h3>
+                    <pre id="userCountsData">${userCountsData.content}</pre>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error:', error);
+        entitiesSection.innerHTML = '<p style="color: red; text-align: center;">An error occurred while processing entities analysis.</p>';
+    }
+});
+
+</script>
+<!-- Semantic Analysis -->
+<section id="semantic" class="content-section"></section>
+
+<script>
+  document.querySelector('li[data-section="semantic"]').addEventListener('click', function () {
+      const semanticSection = document.getElementById('semantic');
+  
+      // Генерация пути с уникальным параметром для обхода кэша
+      const timestamp = new Date().getTime(); // Уникальный параметр
+      const imagePath = `/static/Connections.png?${timestamp}`; // Путь с меткой времени
+  
+      // Динамическое обновление HTML с добавлением стилей и заголовка
+      semanticSection.innerHTML = `
+          <div style="text-align: center; margin-bottom: 20px;">
+              <h2 style="color: #27a7a7; font-size: 24px; font-weight: bold;">Semantic Map</h2>
+          </div>
+          <div style="display: flex; justify-content: center; align-items: center; padding: 20px; background-color: #f9f9f9; border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
+              <img id="graph" src="${imagePath}" alt="Semantic Map" style="max-width: 100%; height: 618px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);"/>
+          </div>
+      `;
+  });
+  </script>
+
+
+<!-- AI Expert -->
+<section id="ai-expert" class="content-section">
+  <div id="ai-1" style="border: 0px rgb(200, 200, 200) solid; height: 100%; margin: 15px;">
+    <h1 style="color: #27a7a7;">Artificial expert results</h1>
+    <div id="ai-1.1" style="border: #eeeeee solid; height: 345px; margin: 10px; border-radius: 10px; overflow: auto; font-size: 18px;">
+      <div id="result-container" style="margin: 10px; ">
+        <!-- Сюди будуть вставлятися результати -->
+      </div>
+    </div>
+  </div>
+  <div id="ai-2" style="border: 0px rgb(200, 200, 200) solid; margin: 15px;">
+    <div id="ai-2.1" style="height: 20%; margin: 10px;">
+      <div id="ai-2.2" style="height: 100%; width: 100%;">
+        <textarea id="prompt_ai" name="prompt_ai" placeholder="Request" type="text" 
+                  style="width: 97%; height: 150px; padding: 10px; margin: 10px; resize: none; border: #eeeeee solid; font-size: 18px; border-radius: 10px"></textarea>
+      </div>
+      <div id="ai-2.3" style="margin: -10px; padding: 15px; text-align: center;">
+        <button id="sendloadBtnjson" onclick="getAi()" class="btn btn-outline-success">Send</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  async function getAi() {
+      const userQuery = document.getElementById('prompt_ai').value.trim();
+      const resultContainer = document.getElementById('result-container');
+  
+      if (!userQuery) {
+          alert('Please enter your query.');
+          return;
+      }
+  
+      resultContainer.innerHTML = '<p>Processing...</p>';
+  
+      try {
+          const response = await fetch('/list/run-ai', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: userQuery })
+          });
+  
+          if (response.ok) {
+              const data = await response.json();
+              // Форматоване виведення з перенесеннями рядків
+              resultContainer.innerHTML = `<pre style="white-space: pre-wrap; word-wrap: break-word;">${data.response}</pre>`;
+          } else {
+              const error = await response.json();
+              resultContainer.innerHTML = `<p style="color: red;">Error: ${error.error}</p>`;
+          }
+      } catch (error) {
+          console.error('Error:', error);
+          resultContainer.innerHTML = '<p style="color: red;">An unexpected error occurred.</p>';
+      }
+  }
+  </script>
+  
+
+    
+    
+            <!--<script>
+              document.getElementById('sendloadBtnjson').addEventListener('click', function() {
+                setTimeout(function() {
+                  document.getElementById('hiddenText').style.display = 'block';
+                }, 4000); // Затримка в 2 секунди
+              });
+            </script>-->
+          </div>
+        </section>
+      </div>
+    
+    <!--
+      <script src="/static/js/script.js"></script>
+      <script src="/static/other/loading_table.js"></script>
+      <script src="/static/js/bootstrap.js"></script>
+    -->
+      <script>
+      
+    
+        
+        const tabs = document.querySelectorAll('.list-group-item');
+        const sections = document.querySelectorAll('.content-section');
+    
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+    
+            const targetSection = tab.getAttribute('data-section');
+    
+            sections.forEach(section => {
+              if (section.id === targetSection) {
+                section.classList.add('active');
+              } else {
+                section.classList.remove('active');
+              }
+            });
+          });
+        });
+    
+      </script>
+
+  </script>
+
+</body>
+
+</html>
